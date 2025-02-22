@@ -1,5 +1,6 @@
 from graphics import *
 import time
+import random
 
 class Maze:
     def __init__(self,
@@ -9,7 +10,8 @@ class Maze:
                  num_cols,
                  cell_size_x,
                  cell_size_y,
-                 win=None
+                 win=None,
+                 seed=None
                  ):
         self._cells = []
         self._x1 = x1
@@ -19,8 +21,10 @@ class Maze:
         self._cell_size_x = cell_size_x
         self._cell_size_y = cell_size_y
         self._win = win
+        self._seed = seed
         self._create_cells()
         self._break_entrance_and_exit()
+        self._break_walls_r(0,0)
 
     def _create_cells(self):
         for i in range(self._num_cols):
@@ -55,4 +59,51 @@ class Maze:
         self._draw_cell(0,0)
         self._cells[-1][-1].has_bottom_wall = False
         self._draw_cell(self._num_cols - 1, self._num_rows - 1)
+
+    def _break_walls_r(self, i, j):
+        current_cell = self._cells[i][j]
+        current_cell.visited = True
+        while True:
+            to_visit = []
+            if self._is_within_bounds(i - 1, j):
+                if not self._cells[i-1][j].visited:
+                    to_visit.append((i - 1, j))
+            if self._is_within_bounds(i, j - 1):
+                if not self._cells[i][j -1 ].visited:
+                    to_visit.append((i, j - 1))
+            if self._is_within_bounds(i + 1, j):
+                if not self._cells[i + 1][j].visited:
+                    to_visit.append((i + 1, j))
+            if self._is_within_bounds(i, j + 1):
+                if not self._cells[i][j + 1].visited:
+                    to_visit.append((i, j + 1))
+            if not to_visit:
+                self._draw_cell(i, j)
+                return
+            if len(to_visit) > 1:
+                move_to_index = random.randrange(0, len(to_visit))
+            else:
+                move_to_index = 0
+            to_visit_cell = self._cells[to_visit[move_to_index][0]][to_visit[move_to_index][1]]
+            dx = to_visit[move_to_index][0] - i
+            dy = to_visit[move_to_index][1] - j
+            self._knock_down_wall(current_cell, to_visit_cell, dx, dy)
+            self._break_walls_r(to_visit[move_to_index][0], to_visit[move_to_index][1])
+
+    def _is_within_bounds(self, i, j):
+        return 0 <= i < self._num_cols and 0 <= j < self._num_rows
+
+    def _knock_down_wall(self, current_cell, next_cell, dx, dy):
+        if dx == -1:  # Moving left
+            current_cell.has_left_wall = False
+            next_cell.has_right_wall = False
+        elif dx == 1:  # Moving right
+            current_cell.has_right_wall = False
+            next_cell.has_left_wall = False
+        elif dy == -1:  # Moving up
+            current_cell.has_top_wall = False
+            next_cell.has_bottom_wall = False
+        elif dy == 1:  # Moving down
+            current_cell.has_bottom_wall = False
+            next_cell.has_top_wall = False
 
